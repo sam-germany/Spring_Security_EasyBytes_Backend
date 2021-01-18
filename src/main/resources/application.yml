@@ -1,0 +1,10 @@
+
+spring:
+  security:
+    user:
+      name: user
+      password: 1234
+
+server:
+  port: 8055
+
