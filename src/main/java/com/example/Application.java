@@ -2,6 +2,8 @@ package com.example;
 
 import org.springframework.boot.SpringApplication;
 import org.springframework.boot.autoconfigure.SpringBootApplication;
+import org.springframework.context.annotation.ComponentScan;
+
 /*
 @ComponentScan("com.example.controller")   (video 4)
 when this main class with @SpringBootApplication is in a totally different package and the other classes are in a totall
@@ -10,7 +12,9 @@ have in   doc.abc.example , so here we have 2 totally different package so in th
 annotation
  */
 @SpringBootApplication
-//@ComponentScan("com.example.controller")
+@ComponentScan({"com.sunny.controllers",
+                "com.sunny.config"
+})
 public class Application {
 
 	public static void main(String[] args) {
