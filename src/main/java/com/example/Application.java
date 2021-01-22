@@ -5,6 +5,7 @@ import org.springframework.boot.autoconfigure.SpringBootApplication;
 import org.springframework.boot.autoconfigure.domain.EntityScan;
 import org.springframework.context.annotation.ComponentScan;
 import org.springframework.data.jpa.repository.config.EnableJpaRepositories;
+import org.springframework.security.config.annotation.web.configuration.EnableWebSecurity;
 
 /*
 @ComponentScan("com.example.controller")   (video 4)
@@ -17,6 +18,7 @@ annotation
 @ComponentScan({"com.sunny.controllers", "com.sunny.config"})
 @EnableJpaRepositories("com.sunny.repository")
 @EntityScan("com.sunny.model")
+@EnableWebSecurity(debug = true)
 public class Application {
 
 	public static void main(String[] args) {

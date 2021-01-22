@@ -22,7 +22,7 @@ public class EasyBankDetails implements UserDetailsService {
     public UserDetails loadUserByUsername(String username) throws UsernameNotFoundException {
         List<Customer> customerList = customerRepository.findByEmail(username);
 
-        System.out.println("-------------222");
+ //       System.out.println("-------------222");
         if( customerList.size() == 0) {
             throw new UsernameNotFoundException("User details not found for the user: "+ username);
         }

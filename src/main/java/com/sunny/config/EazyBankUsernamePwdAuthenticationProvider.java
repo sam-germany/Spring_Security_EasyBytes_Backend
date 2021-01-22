@@ -1,5 +1,6 @@
 package com.sunny.config;
 
+import com.sunny.model.Authority;
 import com.sunny.model.Customer;
 import com.sunny.repository.CustomerRepository;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -15,6 +16,7 @@ import org.springframework.stereotype.Component;
 
 import java.util.ArrayList;
 import java.util.List;
+import java.util.Set;
 
 
 @Component
@@ -34,11 +36,9 @@ public class EazyBankUsernamePwdAuthenticationProvider implements Authentication
         List<Customer> customer1 = customerRepository.findByEmail(username);
 
         if(customer1.size() > 0) {
-            System.out.println("----------111");
+     //       System.out.println("----------111");
             if(passwordEncoder.matches(pwd, customer1.get(0).getPwd())) {
-                List<GrantedAuthority> authorities = new ArrayList<>();
-                authorities.add(new SimpleGrantedAuthority(customer1.get(0).getRole()));
-                return  new UsernamePasswordAuthenticationToken(username, pwd, authorities);
+                return  new UsernamePasswordAuthenticationToken(username, pwd, getGrantedAuthorities22(customer1.get(0).getAuthorities()));
             }else {
                 throw  new BadCredentialsException("Invalid Password");
             }
@@ -46,6 +46,17 @@ public class EazyBankUsernamePwdAuthenticationProvider implements Authentication
             throw new BadCredentialsException("No user registered with this details");
         }
     }
+
+    private List<GrantedAuthority> getGrantedAuthorities22(Set<Authority> authorities) {
+        List<GrantedAuthority> grantedAuthorities = new ArrayList<>();
+        for(Authority x : authorities){
+            grantedAuthorities.add(new SimpleGrantedAuthority(x.getName()));
+        }
+        return grantedAuthorities;
+    }
+
+
+
 
     @Override
     public boolean supports(Class<?> authenticationType) {

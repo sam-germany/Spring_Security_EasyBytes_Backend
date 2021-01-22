@@ -1,16 +1,21 @@
 package com.sunny.config;
 
+import com.sunny.filter.AuthoritiesLoggingAfterFilter22;
+import com.sunny.filter.AuthoritiesLoggingAtFilter22;
+import com.sunny.filter.RequestValidationBeforeFilter22;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
 import org.springframework.security.config.annotation.web.builders.HttpSecurity;
 import org.springframework.security.config.annotation.web.configuration.WebSecurityConfigurerAdapter;
+import org.springframework.security.config.http.SessionCreationPolicy;
 import org.springframework.security.crypto.bcrypt.BCryptPasswordEncoder;
 import org.springframework.security.crypto.password.PasswordEncoder;
-import org.springframework.security.web.csrf.CookieCsrfTokenRepository;
+import org.springframework.security.web.authentication.www.BasicAuthenticationFilter;
 import org.springframework.web.cors.CorsConfiguration;
 import org.springframework.web.cors.CorsConfigurationSource;
 
 import javax.servlet.http.HttpServletRequest;
+import java.util.Arrays;
 import java.util.Collections;
 
 //video 12
@@ -20,28 +25,35 @@ public class ProjectSecurityConfig_02_video_16 extends WebSecurityConfigurerAdap
     @Override
     protected void configure(HttpSecurity http) throws Exception {
 
-        http.cors().configurationSource(new CorsConfigurationSource() {
+        http.sessionManagement().sessionCreationPolicy(SessionCreationPolicy.STATELESS)
+                .and()
+        .cors().configurationSource(new CorsConfigurationSource() {
             @Override
             public CorsConfiguration getCorsConfiguration(HttpServletRequest request) {
                 CorsConfiguration config22 = new CorsConfiguration();
-                config22.setAllowedOrigins(Collections.singletonList("*"));
+                config22.setAllowedOrigins(Collections.singletonList("http://localhost:4200"));
                 config22.setAllowedMethods(Collections.singletonList("*"));
                 config22.setAllowCredentials(true);
                 config22.setAllowedHeaders(Collections.singletonList("*"));
+                config22.setExposedHeaders(Arrays.asList("Authorization"));
                 config22.setMaxAge(3600L);
                 return config22;
             }
         })
                 .and()
-                .csrf()
-                .ignoringAntMatchers("/contact")
-                .csrfTokenRepository(CookieCsrfTokenRepository.withHttpOnlyFalse())
-                .and()
+                .csrf().disable()
+               .addFilterBefore(new RequestValidationBeforeFilter22(), BasicAuthenticationFilter.class)
+                .addFilterAfter(new AuthoritiesLoggingAfterFilter22(), BasicAuthenticationFilter.class)
+                .addFilterAt(new AuthoritiesLoggingAtFilter22(), BasicAuthenticationFilter.class)
+        //        .addFilterBefore(new JWTTokenValidatorFilter22(), BasicAuthenticationFilter.class)    // we need to validate Jwt the Token before Authentication so we use .addFilterBefore()
+        //        .addFilterAfter(new JWTTokenGeneratorFilter22(), BasicAuthenticationFilter.class)      // after the Authentication only create Jwt Token  so we use .addFilterAfter()
+        //        .addFilterAt(new AuthoritiesLoggingAtFilter(), BasicAuthenticationFilter.class)
                 .authorizeRequests()
-                .antMatchers("/myAccount").authenticated()
-                .antMatchers("/myBalance").authenticated()
-                .antMatchers("/myLoans").authenticated()
+                .antMatchers("/myAccount").hasRole("USER")
+                .antMatchers("/myBalance").hasAnyRole("USER", "ADMIN")
+                .antMatchers("/myLoans").hasRole("ROOT")
                 .antMatchers("/myCards").authenticated()
+                .antMatchers("/user").authenticated()
                 .antMatchers("/notices").permitAll()
                 .antMatchers("/contact").permitAll()
                 .and()
@@ -54,57 +66,30 @@ public class ProjectSecurityConfig_02_video_16 extends WebSecurityConfigurerAdap
         return new BCryptPasswordEncoder();
     }
 
-
-
-    /*
-        @Override
-        protected  void configure(AuthenticationManagerBuilder auth) throws  Exception{
-
-            InMemoryUserDetailsManager userDetailsService22 = new InMemoryUserDetailsManager();
-            UserDetails user1 = User.withUsername("admin").password("12345").authorities("admin").build();
-            UserDetails user2 = User.withUsername("user").password("12345").authorities("read").build();
-
-            userDetailsService22.createUser(user1);
-            userDetailsService22.createUser(user2);
-
-            auth.userDetailsService(userDetailsService22);
-        }
-
-       @Bean
-        public UserDetailsService userDetailsService(DataSource dataSource){
-            return  new JdbcUserDetailsManager(dataSource);
-        }
-    */
-
-
-//    ------------------------------------------------
 /*
-    @Override
-    protected  void configure(AuthenticationManagerBuilder auth) throws  Exception{
-        auth.inMemoryAuthentication()
-            .withUser("admin").password("12345").authorities("admin")
-            .and()
-            .withUser("user").password("12345").authorities("read")
-            .and()
-            .passwordEncoder(NoOpPasswordEncoder.getInstance());
-    }
---------------------------------------------------------------------------
- */
-  /*
- CQRS  configuration    (video 45-52)
- ------------------
- Collections.singletonList()   <-- here singletonList() means returns a List , this list is immutable ,we can not change it
+http.sessionManagement().sessionCreationPolicy(SessionCreationPolicy.STATELESS)     <-- (video 76)
 
-config22.setAllowedOrigins()   <-- this application accepts only calls from the ports defined in this methods only
-config22.setAllowedMethods()   <--  which methods are allowed  GET POST PATCH DELETE PUT  or   user (*) if we allow all
-config22.setAllowCredentials()  <-- it means this application accepts  Credentials also
-config22.setAllowedHeaders()   <-- it means all kind of Headers are allowed
-config22.setMaxAge(3600L)      <-- it means Browser is allowed to save these CORS configuration for 3600 sec and
-                                   after that Browser has to again make a new call to check if the CORS configuration has
-                                   changed or not, it normally means check about the configuration after every 3600sec
-config22.setAllowedOrigins(Arrays.asList("http://localhost:4200", "http://localhost:5555"));   <-- use Arrays.asList() for multiple objects
+by default a JSESSIONID is created, and with above command we are saying that do not create any http session
+and Tokens, i will take care it myself, as we are using JWT token
 
--------------------------------------------------------------------------------------------------
+SessionCreationPolicy.ALWAYS     <-- means that always generate a default token and session by spring
+SessionCreationPolicy.IF_REQUIRED <-- generate token if it is required
+SessionCreationPolicy.NEVER      <-- never generate a token but if a token is already their then use it
+SessionCreationPolicy.STATELESS  <- it means never generate a token and if a token is already their then do not use it
+
+--------------------------------------------------------------------------------------------------
+.addFilterBefore(new RequestValidationBeforeFilter22(), BasicAuthenticationFilter.class)   <-- see (video 67) to understand this line
+
+their is a predefined filter from spring  "BasicAuthenticationFilter" and we are putting our filter before it with .addFilterBefore()
+
+--------------------------------------------------------------------------------------------------
+.addFilterAfter(new AuthoritiesLoggingAfterFilter22(), BasicAuthenticationFilter.class)   <-- see (video 68) to understand .addFilterAfter()
+
+
+====================================================================================================================
+.csrf().disable()    <-- as we use JWT token so no need of .csrf() to handled as we are not using it (video 76)
+
+
 CSRF  ->  Cross site Request Forgery   (video 51)
 -----
 as we handled as shown in this video the CSRF, the main point to understand only when we create a call from broweser
@@ -136,5 +121,47 @@ The method withHttpOnlyFalse allows angular to read XSRF cookie. Make sure that 
 
 with this   .ignoringAntMatchers() we have defined that
 
-   */
+--------------------------------------------------------------------------------------------------------------------------
+ CQRS  configuration    (video 45-52)
+ ------------------
+ Collections.singletonList()   <-- here singletonList() means returns a List , this list is immutable ,we can not change it
+
+config22.setAllowedOrigins()   <-- this application accepts only calls from the ports defined in this methods only
+config22.setAllowedMethods()   <--  which methods are allowed  GET POST PATCH DELETE PUT  or   user (*) if we allow all
+config22.setAllowCredentials()  <-- it means this application accepts  Credentials also
+config22.setAllowedHeaders()   <-- it means all kind of Headers are allowed
+config22.setMaxAge(3600L)      <-- it means Browser is allowed to save these CORS configuration for 3600 sec and
+                                   after that Browser has to again make a new call to check if the CORS configuration has
+                                   changed or not, it normally means check about the configuration after every 3600sec
+config22.setAllowedOrigins(Arrays.asList("http://localhost:4200", "http://localhost:5555"));   <-- use Arrays.asList() for multiple objects
+
+config22.setExposedHeaders(Arrays.asList("Authorization22"));    <-- it means that we are generating our own header with the name key = "Authorization22"
+---------------------------------------------------------------------------------
+
+Note: another way of configuring CORS as  @Bean
+
+    @Bean
+        public CorsConfigurationSource  corsConfigurationSource() {
+
+        	final CorsConfiguration   configuration = new CorsConfiguration();
+
+        	configuration.setAllowedOrigins(Arrays.asList("*"));  // use  ("*")  if we want to allow calls from all the origins
+        	configuration.setAllowedMethods(Arrays.asList("*"));  // use  ("*") to allow all methods calls e.g GET,POST,PUT,DELETE
+        	configuration.setAllowCredentials(true);        // if we want to allow credentials to be included in the Http Response
+        	                                                // Credentials means  cookies, Authorization Headers or SSL client certificates
+
+        	configuration.setAllowedHeaders(Arrays.asList("*")); // as we have  Auth_Token  as Header so we can specific with specific name
+          	                                                     // or ("*")  use this to allow all
+
+        	final UrlBasedCorsConfigurationSource source = new UrlBasedCorsConfigurationSource();
+        	source.registerCorsConfiguration("/**", configuration);   // this is for the specific path like we have
+        	                                                          //   /api/v1/users/login      this for the login
+        	return source;                                              // so we can put his specific path or we can use  "*"  to allow all
+
+        }
+
+
+
+
+*/
 }
