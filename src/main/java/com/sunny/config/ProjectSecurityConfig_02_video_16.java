@@ -1,10 +1,9 @@
 package com.sunny.config;
 
-import com.sunny.filter.AuthoritiesLoggingAfterFilter22;
-import com.sunny.filter.AuthoritiesLoggingAtFilter22;
-import com.sunny.filter.RequestValidationBeforeFilter22;
+import com.sunny.filter.*;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
+import org.springframework.security.config.annotation.method.configuration.EnableGlobalMethodSecurity;
 import org.springframework.security.config.annotation.web.builders.HttpSecurity;
 import org.springframework.security.config.annotation.web.configuration.WebSecurityConfigurerAdapter;
 import org.springframework.security.config.http.SessionCreationPolicy;
@@ -20,6 +19,7 @@ import java.util.Collections;
 
 //video 12
 @Configuration
+@EnableGlobalMethodSecurity(prePostEnabled = true, securedEnabled = true, jsr250Enabled = true)
 public class ProjectSecurityConfig_02_video_16 extends WebSecurityConfigurerAdapter {
 
     @Override
@@ -42,12 +42,11 @@ public class ProjectSecurityConfig_02_video_16 extends WebSecurityConfigurerAdap
         })
                 .and()
                 .csrf().disable()
-               .addFilterBefore(new RequestValidationBeforeFilter22(), BasicAuthenticationFilter.class)
+                .addFilterBefore(new RequestValidationBeforeFilter22(), BasicAuthenticationFilter.class)
                 .addFilterAfter(new AuthoritiesLoggingAfterFilter22(), BasicAuthenticationFilter.class)
                 .addFilterAt(new AuthoritiesLoggingAtFilter22(), BasicAuthenticationFilter.class)
-        //        .addFilterBefore(new JWTTokenValidatorFilter22(), BasicAuthenticationFilter.class)    // we need to validate Jwt the Token before Authentication so we use .addFilterBefore()
-        //        .addFilterAfter(new JWTTokenGeneratorFilter22(), BasicAuthenticationFilter.class)      // after the Authentication only create Jwt Token  so we use .addFilterAfter()
-        //        .addFilterAt(new AuthoritiesLoggingAtFilter(), BasicAuthenticationFilter.class)
+               .addFilterBefore(new JWTTokenValidatorFilter22(), BasicAuthenticationFilter.class)    // we need to validate Jwt the Token before Authentication so we use .addFilterBefore()
+               .addFilterAfter(new JWTTokenGeneratorFilter22(), BasicAuthenticationFilter.class)      // after the Authentication only create Jwt Token  so we use .addFilterAfter().addFilterAt(new AuthoritiesLoggingAtFilter(), BasicAuthenticationFilter.class)
                 .authorizeRequests()
                 .antMatchers("/myAccount").hasRole("USER")
                 .antMatchers("/myBalance").hasAnyRole("USER", "ADMIN")
